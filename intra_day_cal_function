@@ -1,0 +1,145 @@
+<?php
+
+function load_data($excelCollection) {
+
+
+    echo "<div class='col-md-12'><table id='table' class='table table-hover'  style='width:100%'>"
+    . "<thead><tr>"
+    . "<th>Date</th>"
+    . "<th>Time</th>"
+    . "<th>Open</th>"
+    . "<th>High</th>"
+    . "<th>Low</th>"
+    . "<th>Close</th>"
+    . "<th>Quantity</th>"
+    . "<th>Average</th>"
+    . "<th>Candle Stick Pattern</th>"
+    . "<th>Candle Stick Pattern</th>"
+    . "<th>OH/OL</th>"
+    . "<th>Vol</th>"
+    . "<th>EMA</th>"
+    . "<th>Support</th>"
+    . "<th>Resitance</th></tr>"
+    . "</thead><tbody>";
+    for ($r = 0; $r < count($excelCollection); $r++) {
+        $f = $r;
+        $s = $f + 1;
+
+        if (count($excelCollection) > $s) {
+            echo "<tr>";
+            echo "<td>" . array_values($excelCollection[$f])[0] . "</td>";
+            echo "<td>" . array_values($excelCollection[$f])[1] . "</td>";
+            echo "<td>" . array_values($excelCollection[$f])[2] . "</td>";
+            echo "<td>" . array_values($excelCollection[$f])[3] . "</td>";
+            echo "<td>" . array_values($excelCollection[$f])[4] . "</td>";
+            echo "<td>" . array_values($excelCollection[$f])[5] . "</td>";
+            echo "<td>" . array_values($excelCollection[$f])[6] . "</td>";
+            echo "<td>" . array_values($excelCollection[$f])[7] . "</td>";
+            echo "<td>" . getCandle_Stick_Pattern1(array_values($excelCollection[$f]), array_values($excelCollection[$s])) . "</td>";
+            echo "<td>" . getCandle_Stick_Pattern2(array_values($excelCollection[$f]), array_values($excelCollection[$s])) . "</td>";
+            echo "<td>" . oh_and_ol(array_values($excelCollection[$f]), array_values($excelCollection[$s])) . "</td>";
+            echo "<td>" . vol(array_values($excelCollection[$f]), array_values($excelCollection[$s])) . "</td>";
+            echo "<td>" . vol(array_values($excelCollection[$f]), getAverage($excelCollection, $f)) . "</td>";
+            echo "<td>" . support(array_values($excelCollection[$f])) . "</td>";
+            echo "<td>" . resitance(array_values($excelCollection[$f])) . "</td>";
+            echo "<tr>";
+        }
+    }
+    echo "</tbody></table></div>";
+}
+
+function getAverage($collection, $start) {
+    $sum = 0;
+    if (count($collection) > 0) {
+        $counter = 0;
+        $sum = array_values($collection[$start])[5];
+        for ($i = $start; $i < count($collection); $i++) {
+            if ($counter < 9) {
+                $sum = $sum + array_values($collection[$i])[5];
+            }
+        }
+        $sum = $sum / 9;
+        return $sum;
+    } else {
+        return $sum;
+    }
+}
+
+function resitance($row_1) {
+    //=IF(F7<C7,SUM(F7+C7)/2,IF(F7>C7,D7))
+    if ($row_1[5] < $row_1[2]) {
+        return ($row_1[5] + $row_1[2]) / 2;
+    } else {
+        return $row_1[3];
+    }
+}
+
+function support($row_1) {
+    if ($row_1[5] > $row_1[2]) {
+        return ($row_1[5] + $row_1[2]) / 2;
+    } else {
+        return $row_1[4];
+    }
+}
+
+function ema($row_1, $avg_pre_9_day) {
+    if ($row_1[5] > $avg_pre_9_day) {
+        return "BUY";
+    } else if ($row_1[5] < $avg_pre_9_day) {
+        return "SELL";
+    } else {
+        return "FALSE";
+    }
+}
+
+function vol($row_1, $row_2) {
+    if ($row_1[6] > $row_2[6]) {
+        return "BUY";
+    } else {
+        return "I";
+    }
+}
+
+function oh_and_ol($row_1, $row_2) {
+    if ($row_1[2] == $row_1[3]) {
+        return "SELL";
+    } else if ($row_1[2] == $row_1[4]) {
+        return "BUY";
+    } else {
+        return "FALSE";
+    }
+}
+
+function getCandle_Stick_Pattern2($row_1, $row_2) {
+    if ($row_2[2] == $row_2[5]) {
+        return "DOJI";
+    } else if (($row_2[3] - $row_2[5]) == ($row_2[2] - $row_2[4])) {
+        return "SPININGTOP";
+    } elseif (($row_2[5] > $row_1[3]) && ($row_2[2] < $row_1[4])) {
+        return "HARRAMI2";
+    } else {
+        return "FALSE";
+    }
+}
+
+function getCandle_Stick_Pattern1($row_1, $row_2) {
+
+    if (($row_1[3] - $row_1[5]) > (($row_1[2] - $row_1[5]) * 2) && $row_1[4] == $row_1[5]) {
+        return "I_HAMMER";
+    } else if (($row_1[3] - $row_1[4]) > (($row_1[5] - $row_1[2]) * 2) && $row_1[3] == $row_1[5]) {
+        return "HAMMER";
+    } else if (($row_1[2] <= $row_2[5]) && ($row_1[5] >= $row_2[3]) && ($row_2[2] > $row_2[5])) {
+        return "BuLL_ENGULF";
+    } else if (($row_1[2] <= $row_2[5]) && ($row_1[5] > (($row_2[2] + $row_2[5]) / 2)) && ($row_2[2] > $row_2[5])) {
+        return "BuLL_PEARCING";
+    } else if (($row_1[2] >= $row_2[5]) && ($row_1[5] <= $row_2[2]) && ($row_2[2] < $row_2[5])) {
+        return "BEAR_ENGULF";
+    } else if (($row_1[2] >= $row_2[5]) && ($row_1 < (($row_2[2] + $row_2[5]) / 2)) && ($row_2[2] < $row_2[5])) {
+        return "BEAR_PEARCING";
+    } else if (($row_1[3] < $row_2[2]) && ($row_1[4] > $row_2[5])) {
+        return "HARRAMI";
+    } else {
+        return "FALSE";
+    }
+}
+?>
